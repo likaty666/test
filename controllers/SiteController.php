@@ -3,13 +3,16 @@
 namespace app\controllers;
 
 use app\models\EntryForm;
+use app\models\Feedback;
 use Yii;
 use yii\base\Model;
 use yii\filters\AccessControl;
+use yii\helpers\Html;
 use yii\web\Controller;
 use yii\filters\VerbFilter;
 use app\models\LoginForm;
 use app\models\ContactForm;
+use yii\web\UploadedFile;
 
 class SiteController extends Controller
 {
@@ -125,12 +128,51 @@ class SiteController extends Controller
         return $this->render('about');
     }
 
-    public function actionHelloWorld($message="Hi u"){
-        return $this->render('hello',['msg'=>$message,'msg2'=>"Winter is coming"]);
+    public function actionHelloWorld($message = "Hi u")
+    {
+        return $this->render('hello', ['msg' => $message, 'msg2' => "Winter is coming"]);
     }
 
-    public function actionEntry(){
-        $model=new EntryForm();
-        return $this->render('entry',['model'=>$model]);
+    public function actionEntry()
+    {
+        $model = new EntryForm();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $name = Html::encode($model->name);
+            $email = $model->email;
+            $age = $model->age;
+            $model->file = UploadedFile::getInstance($model, 'file');
+            $model->file->saveAs('uploads/' . $model->file->baseName . '.' . $model->file->extension);
+            return $this->render('success', ['name' => $name, 'email' => $email]);
+        }
+        return $this->render('entry', ['model' => $model]);
+    }
+
+    public function actionHelloAgain($message = "Hello mean world")
+    {
+        return $this->render('helloAgain', ['msg2' => $message]);
+    }
+
+    public function actionFeedback()
+    {
+        $model = new Feedback();
+        if ($model->load(Yii::$app->request->post()) && $model->validate()) {
+            $name = ($model->name);
+            $email = $model->email;
+            $age = $model->age;
+            $inn = $model->inn;
+            $about = $model->about;
+            $model->file = UploadedFile::getInstance($model, 'file');
+            $fpath = 'uploads/' . $model->file->baseName . '.' . $model->file->extension;
+            $model->file->saveAs($fpath);
+            Yii::$app->mailer->compose()
+                ->setFrom("noreply@yii.net")
+                ->setTo('darkfairy_@mail.ru')
+                ->setSubject("Hi me")
+                ->setTextBody("some data")
+                ->attach($fpath)
+                ->send();
+            return $this->render('goodFeed', ['name' => $name, 'email' => $email]);
+        }
+        return $this->render('feedback', ['model' => $model]);
     }
 }
