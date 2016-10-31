@@ -2,6 +2,7 @@
 
 namespace app\controllers;
 
+use app\models\blog;
 use app\models\EntryForm;
 use app\models\Feedback;
 use Yii;
@@ -164,15 +165,25 @@ class SiteController extends Controller
             $model->file = UploadedFile::getInstance($model, 'file');
             $fpath = 'uploads/' . $model->file->baseName . '.' . $model->file->extension;
             $model->file->saveAs($fpath);
-            Yii::$app->mailer->compose()
+            Yii::$app->mailer->compose('temp', ['model' => $model])
                 ->setFrom("noreply@yii.net")
-                ->setTo('darkfairy_@mail.ru')
+                ->setTo($email)
                 ->setSubject("Hi me")
-                ->setTextBody("some data")
+//                ->setTextBody($about)
                 ->attach($fpath)
                 ->send();
             return $this->render('goodFeed', ['name' => $name, 'email' => $email]);
         }
         return $this->render('feedback', ['model' => $model]);
     }
+
+    public function actionShowComments()
+    {
+        $comments = Blog::findOne(1);
+        if ($comments->load(Yii::$app->request->post()) && $comments->validate()) {
+            $comments->save();
+        }
+        return $this->render('comments', ['comments'=> $comments]);
+    }
+
 }
